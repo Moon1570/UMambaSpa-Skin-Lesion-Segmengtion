@@ -27,6 +27,20 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+
+# Data directories (NEVER commit datasets!)
+data/ISIC*/
+data/PH2/
+data/raw/
+data/**/*.jpg
+data/**/*.png
+data/**/*.zip
+data/**/*.tar.gz
+
+# Keep the directory structure but not the files
+!data/.gitkeep
+!data/ISIC2017/.gitkeep
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
