@@ -9,10 +9,10 @@ defaults:
   - trainer: default
   - paths: default
   - hydra: default
-
   - experiment: null
   - optional local: default
   - debug: null
+  - extras: default
 
 task_name: train
 
