@@ -24,3 +24,16 @@ pre-commit      # hooks for applying linters on commit
 rich            # beautiful text formatting in terminal
 pytest          # tests
 # sh            # for running bash commands in some tests (linux/macos only)
+
+# Scientific
+numpy>=1.24.0
+matplotlib>=3.7.0
+
+# Hugging Face
+huggingface-hub>=0.16.0
+
+
+# OPTIONAL: Mamba (only for Lightning.ai/GPU servers)
+# Uncomment these when running on Lightning.ai:
+# mamba-ssm>=1.0.0
+# causal-conv1d>=1.1.0

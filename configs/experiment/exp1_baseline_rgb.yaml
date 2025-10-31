@@ -1,0 +1,41 @@
+# @package _global_
+
+# to execute this experiment run:
+# python src/train.py experiment=exp1_baseline_rgb
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: spatial_mamba_unet.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+name: "exp1_baseline_rgb"
+
+tags: ["baseline", "rgb", "exp1"]
+
+seed: 12345
+
+data:
+  spatial_mode: "rgb"
+  in_channels: 3
+  batch_size: 12
+
+model:
+  net:
+    in_channels: 3
+  optimizer:
+    lr: 0.001
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+logger:
+  wandb:
+    name: "exp1_baseline_rgb"
+    tags: ${tags}
+    group: "spatial-mamba"
