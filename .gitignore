@@ -27,6 +27,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+.ubuvenv
 
 # Data directories (NEVER commit datasets!)
 data/ISIC*/
@@ -78,6 +79,9 @@ db.sqlite3-journal
 # Flask stuff:
 instance/
 .webassets-cache
+
+#logs
+logs/
 
 # Scrapy stuff:
 .scrapy
