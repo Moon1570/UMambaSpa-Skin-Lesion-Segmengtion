@@ -6,6 +6,7 @@ from pathlib import Path
 from src.data.isic_datamodule import ISICDataModule
 
 
+@pytest.mark.requires_data
 def test_isic_datamodule_initialization():
     """Test ISICDataModule initialization."""
     data_dir = "data/ISIC2017"
@@ -35,6 +36,7 @@ def test_isic_datamodule_initialization():
     assert dm.data_val is None
 
 
+@pytest.mark.requires_data
 def test_isic_datamodule_setup():
     """Test ISICDataModule setup method."""
     data_dir = "data/ISIC2017"
@@ -68,6 +70,7 @@ def test_isic_datamodule_setup():
     assert len(dm.data_val) > 0
 
 
+@pytest.mark.requires_data
 def test_isic_datamodule_dataloaders():
     """Test ISICDataModule dataloaders."""
     data_dir = "data/ISIC2017"
@@ -134,6 +137,7 @@ def test_isic_datamodule_dataloaders():
         assert mask.shape[0] == 2  # batch_size
 
 
+@pytest.mark.requires_data
 def test_isic_datamodule_test_setup():
     """Test ISICDataModule test setup."""
     data_dir = "data/ISIC2017"
@@ -168,6 +172,7 @@ def test_isic_datamodule_test_setup():
     assert len(test_loader) > 0
 
 
+@pytest.mark.requires_data
 @pytest.mark.parametrize("batch_size", [1, 2, 4])
 def test_isic_datamodule_batch_sizes(batch_size):
     """Test ISICDataModule with different batch sizes."""

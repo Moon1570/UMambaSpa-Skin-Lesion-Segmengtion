@@ -6,6 +6,7 @@ import torch
 from src.data.isic_datamodule import ISICDataModule
 
 
+@pytest.mark.requires_data
 @pytest.mark.parametrize("batch_size", [2, 4])
 def test_isic_datamodule_basic(batch_size: int) -> None:
     """Tests `ISICDataModule` to verify that dataloaders work correctly and that dtypes and batch
