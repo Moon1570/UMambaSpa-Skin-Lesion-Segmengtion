@@ -1,8 +1,16 @@
-# disable python warnings if they annoy you
-ignore_warnings: False
+# configs/extras/default.yaml
+defaults: []
 
-# ask user for tags if none are provided in the config
-enforce_tags: True
+# Print config tree before training
+print_config: true
 
-# pretty print config tree at the start of the run using Rich library
-print_config: True
+# Ignore warnings
+ignore_warnings: false
+
+# Force debug friendly configuration
+# Use this to debug issues in training
+enforce_tags: true
+
+# Pretty print using Rich library
+# Set to false to disable
+print_config_tree: true

@@ -20,11 +20,29 @@ sync: ## Merge changes from main branch to your current branch
 	git pull
 	git pull origin main
 
-test: ## Run not slow tests
-	pytest -k "not slow"
+test: ## Run fast tests (exclude slow tests)
+	pytest -k "not slow" -v
 
 test-full: ## Run all tests
-	pytest
+	pytest -v
+
+test-cov: ## Run tests with coverage
+	pytest --cov=src --cov-report=html --cov-report=term
+
+test-data: ## Test datamodules only
+	pytest tests/test_isic_datamodule.py tests/test_datamodules.py -v
+
+test-model: ## Test model only
+	pytest tests/test_model.py -v
+
+test-config: ## Test configurations
+	pytest tests/test_configs.py -v
+
+test-spatial: ## Test spatial encoding
+	pytest tests/test_spatial_encoding.py -v
 
 train: ## Train the model
 	python src/train.py
+
+eval: ## Evaluate the model
+	python src/eval.py

@@ -5,9 +5,9 @@ from setuptools import find_packages, setup
 setup(
     name="src",
     version="0.0.1",
-    description="Describe Your Cool Project",
-    author="",
-    author_email="",
+    description="Skin Lesion segmentation using U-Net, Mamba, Spatial Feature and Skip Connections",
+    author="Md. Minhaj Ul Islam",
+    author_email="mminhaj17.cse@bu.ac.bd",
     url="https://github.com/user/project",
     install_requires=["lightning", "hydra-core"],
     packages=find_packages(),

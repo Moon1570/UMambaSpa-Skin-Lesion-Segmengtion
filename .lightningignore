@@ -1,0 +1,10 @@
+# .lightningignore
+*.pyc
+__pycache__/
+.git/
+logs/
+outputs/
+data/ISIC2018/  # Will download in cloud
+*.pth
+*.ckpt
+.ubuvenv/

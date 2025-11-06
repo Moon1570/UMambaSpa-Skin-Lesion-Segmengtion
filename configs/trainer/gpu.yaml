@@ -1,5 +1,18 @@
-defaults:
-  - default
+_target_: lightning.pytorch.Trainer
 
+default_root_dir: ${paths.output_dir}
+
+min_epochs: 1
+max_epochs: 100
+
+# GPU settings for Lightning.ai
 accelerator: gpu
 devices: 1
+precision: 16-mixed
+
+gradient_clip_val: 1.0
+gradient_clip_algorithm: norm
+
+log_every_n_steps: 10
+deterministic: false
+fast_dev_run: false

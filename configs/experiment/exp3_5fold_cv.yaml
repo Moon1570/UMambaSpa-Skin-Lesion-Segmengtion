@@ -1,0 +1,39 @@
+# @package _global_
+
+# 5-Fold Cross-Validation
+# python src/train.py experiment=exp3_5fold_cv fold=1
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: spatial_mamba_unet.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+name: "exp3_spatial_full_fold${fold}"
+
+tags: ["spatial", "full", "cv", "fold${fold}"]
+
+# Fold number (set via command line)
+fold: 1
+
+seed: ${fold}  # Different seed for each fold
+
+data:
+  spatial_mode: "rgb_xyz_radial"
+  in_channels: 6
+  batch_size: 8
+  fold: ${fold}  # Pass fold to datamodule
+
+model:
+  net:
+    in_channels: 6
+
+trainer:
+  max_epochs: 100
+
+logger:
+  wandb:
+    name: "exp3_fold${fold}"
+    tags: ${tags}
+    group: "5fold-cv"

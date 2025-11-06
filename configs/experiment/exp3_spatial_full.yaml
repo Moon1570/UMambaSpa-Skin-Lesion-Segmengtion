@@ -1,0 +1,38 @@
+# @package _global_
+
+# EXP-3: RGB + XY + Radial (FULL SPATIAL)
+# python src/train.py experiment=exp3_spatial_full
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: spatial_mamba_unet.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+name: "exp3_spatial_full"
+
+tags: ["spatial", "full", "xyz", "radial", "exp3"]
+
+seed: 12345
+
+data:
+  spatial_mode: "rgb_xyz_radial"
+  in_channels: 6
+  batch_size: 8  # Largest model
+
+model:
+  net:
+    in_channels: 6
+  optimizer:
+    lr: 0.001
+
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+logger:
+  wandb:
+    name: "exp3_spatial_full"
+    tags: ${tags}
+    group: "spatial-mamba"

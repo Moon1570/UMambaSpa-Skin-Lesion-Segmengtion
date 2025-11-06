@@ -1,0 +1,36 @@
+_target_: src.models.spatial_mamba_module.SpatialMambaLitModule
+
+# Optimizer
+optimizer:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.001
+  weight_decay: 0.0001
+
+# Scheduler
+scheduler:
+  _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+  _partial_: true
+  T_max: 100
+  eta_min: 1e-6
+
+# Model architecture
+net:
+  _target_: src.models.components.spatial_mamba_unet.SpatialMambaUNet
+  in_channels: 3  # Will be set by datamodule
+  out_channels: 1
+  base_channels: 64
+  use_mamba: True
+  mamba_config:
+    d_state: 16
+    d_conv: 4
+    expand: 2
+
+# Loss function
+criterion:
+  _target_: src.models.components.losses.DiceBCELoss
+  dice_weight: 0.5
+  bce_weight: 0.5
+
+# Compile model for faster training (PyTorch 2.0+)
+compile: False
