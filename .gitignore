@@ -83,6 +83,7 @@ instance/
 #logs
 logs/
 cuda_12.1.0_530.30.02_linux.run
+kaggle.json
 
 # Scrapy stuff:
 .scrapy
