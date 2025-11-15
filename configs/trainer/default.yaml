@@ -9,7 +9,7 @@ max_epochs: 100
 # Force CPU for local development
 accelerator: gpu  # Changed from 'gpu' to 'cpu'
 devices: 1
-precision: 32  # Changed from 16-mixed to 32 for CPU
+precision: 16-mixed  # Changed from 16-mixed to 32 for CPU
 
 # Gradient clipping
 gradient_clip_val: 1.0
