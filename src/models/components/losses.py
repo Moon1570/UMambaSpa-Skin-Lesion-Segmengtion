@@ -32,10 +32,14 @@ class DiceBCELoss(nn.Module):
         self.bce_weight = bce_weight
         
         self.dice = DiceLoss()
-        self.bce = nn.BCELoss()
+        self.bce = nn.BCEWithLogitsLoss()  # Safe for autocast/mixed precision
     
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        dice_loss = self.dice(pred, target)
+        # Apply sigmoid for Dice loss (expects probabilities)
+        pred_sigmoid = torch.sigmoid(pred)
+        dice_loss = self.dice(pred_sigmoid, target)
+        
+        # BCE with logits (expects raw logits)
         bce_loss = self.bce(pred, target)
         
         return self.dice_weight * dice_loss + self.bce_weight * bce_loss

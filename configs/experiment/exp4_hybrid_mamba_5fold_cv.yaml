@@ -1,0 +1,78 @@
+# @package _global_
+
+# 5-Fold Cross-Validation for exp4 Hybrid Mamba
+# python src/train.py experiment=exp4_hybrid_mamba data.fold=1
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: mk_spatial_mamba.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+name: "exp4_hybrid_mamba_fold${data.fold}"
+
+tags: ["hybrid", "mamba", "spatial", "cbam", "mk-unet", "cv", "fold${data.fold}"]
+
+seed: ${data.fold}  # Different seed for each fold
+
+# Data config
+data:
+  spatial_mode: "rgb_xyz_radial"  # RGB + X + Y + Radial
+  in_channels: 6
+  batch_size: 12
+  fold: 1  # Pass fold to datamodule (override via command line: data.fold=N)
+  
+  # Enable augmentation
+  augmentation:
+    train:
+      horizontal_flip_prob: 0.5
+      vertical_flip_prob: 0.5
+      rotate_limit: 30
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+      scale_limit: 0.2
+      enabled: true
+
+# Model config
+model:
+  net:
+    _target_: src.models.components.mk_spatial_mamba_unet.MKSpatialMambaUNet
+    in_channels: 6
+    num_classes: 1
+    channels: [16, 32, 64, 96, 160]
+    use_spatial: true
+    use_mamba: true   # ← Directional Mamba enabled
+    use_cbam: true    # ← CBAM attention enabled
+  
+  optimizer:
+    lr: 0.001
+    weight_decay: 0.0001
+  
+  criterion:
+    dice_weight: 0.6
+    bce_weight: 0.4
+
+# Trainer config
+trainer:
+  max_epochs: 100
+  gradient_clip_val: 1.0
+
+# Callbacks
+callbacks:
+  early_stopping:
+    patience: 15
+    monitor: "val/dice"
+    mode: "max"
+  
+  model_checkpoint:
+    monitor: "val/dice"
+    mode: "max"
+    save_top_k: 3
+
+# Logger
+logger:
+  wandb:
+    name: "exp4_hybrid_mamba_fold${data.fold}"
+    tags: ${tags}
+    group: "exp4-5fold-cv"

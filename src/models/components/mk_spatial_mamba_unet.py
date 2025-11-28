@@ -20,7 +20,7 @@ class MKIR(nn.Module):
     Lightweight feature extraction using depth-wise convolutions.
     """
     
-    def __init__(self, in_channels: int, out_channels: int, kernels=[1, 3, 5], expansion=2):
+    def __init__(self, in_channels: int, out_channels: int, kernels=[1, 3, 5], expansion=4):
         super().__init__()
         
         hidden_channels = in_channels * expansion
@@ -41,8 +41,13 @@ class MKIR(nn.Module):
         self.pw2 = nn.Conv2d(hidden_channels, out_channels, 1)
         self.bn2 = nn.BatchNorm2d(out_channels)
         
-        # Residual
-        self.residual = in_channels == out_channels
+        # Residual connection
+        self.residual = None
+        if in_channels != out_channels:
+            self.residual = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, 1),
+                nn.BatchNorm2d(out_channels)
+            )
     
     def forward(self, x):
         identity = x
@@ -63,8 +68,9 @@ class MKIR(nn.Module):
         x = self.bn2(self.pw2(x))
         
         # Residual
-        if self.residual:
-            x = x + identity
+        if self.residual is not None:
+            identity = self.residual(identity)
+        x = x + identity
         
         return x
 
@@ -109,21 +115,25 @@ class MKSpatialMambaUNet(nn.Module):
     """
     Hybrid architecture: MK-UNet + Directional Mamba + Spatial Features
     
-    Architecture:
-    - Encoder: Lightweight MKIR blocks
-    - Bottleneck: Directional Mamba (proper 2D scanning)
-    - Decoder: MKIR blocks with CBAM skip connections
-    - Input: RGB + Spatial coordinates (6 channels)
+    Architecture (3 stages):
+    - Stem: Conv 6→32
+    - Encoder: MKIR 32→64→128 (2 stages)
+    - Bottleneck: MKIR + Mamba + MKIR (128→128)
+    - Decoder: MKIR 128→64→32 (2 stages)
+    - Output: Conv 32→1
+    
+    Total params: ~2.5-3M
     """
     
     def __init__(
         self,
-        in_channels: int = 6,  # RGB + X + Y + Radial
-        num_classes: int = 1,
-        channels: list = [16, 32, 64, 96, 160],
-        use_spatial: bool = True,
-        use_mamba: bool = True,  # Can disable for ablation
-        use_cbam: bool = True
+        in_channels=6,
+        num_classes=1,
+        channels=[32, 64, 128],
+        use_spatial=True,
+        use_mamba=True,
+        use_cbam=True,
+        mamba_d_state=16  # Mamba state dimension
     ):
         super().__init__()
         
@@ -133,57 +143,47 @@ class MKSpatialMambaUNet(nn.Module):
         
         # Spatial coordinate generator
         if use_spatial:
-            self.spatial_gen = SpatialCoordinateGenerator(normalize=True)
-            actual_in_channels = 6  # RGB + X + Y + Radial
-        else:
-            actual_in_channels = 3  # RGB only
+            self.spatial_gen = SpatialCoordinateGenerator()
         
-        # Encoder (lightweight MK blocks)
-        self.encoder1 = MKIR(actual_in_channels, channels[0])
-        self.encoder2 = MKIR(channels[0], channels[1])
-        self.encoder3 = MKIR(channels[1], channels[2])
-        self.encoder4 = MKIR(channels[2], channels[3])
+        # Stem
+        self.stem = nn.Sequential(
+            nn.Conv2d(in_channels, channels[0], 3, padding=1),
+            nn.BatchNorm2d(channels[0]),
+            nn.ReLU(inplace=True)
+        )
         
-        self.pool = nn.MaxPool2d(2)
+        # Pooling
+        self.pool = nn.MaxPool2d(2, 2)
         
-        # Bottleneck
+        # Encoder (2 stages)
+        self.enc1 = MKIR(channels[0], channels[1])  # 32→64
+        self.enc2 = MKIR(channels[1], channels[2])  # 64→128
+        
+        # Bottleneck (with optional Mamba)
         if use_mamba:
-            print("✅ Using Directional Mamba in bottleneck")
-            self.bottleneck = nn.Sequential(
-                MKIR(channels[3], channels[4]),
-                DirectionalMambaBlock(channels[4], d_state=16),
-                MKIR(channels[4], channels[4])
+            self.bottleneck_pre = MKIR(channels[2], channels[2])  # 128→128
+            self.mamba_block = DirectionalMambaBlock(
+                d_model=channels[2],     # ← FIXED!
+                d_state=mamba_d_state    # ← FIXED!
             )
+            self.bottleneck_post = MKIR(channels[2], channels[2])  # 128→128
         else:
-            print("✅ Using pure CNN in bottleneck (no Mamba)")
-            self.bottleneck = nn.Sequential(
-                MKIR(channels[3], channels[4]),
-                MKIR(channels[4], channels[4]),
-                MKIR(channels[4], channels[4])
-            )
+            self.bottleneck = MKIR(channels[2], channels[2])
         
-        # Decoder
-        self.upconv4 = nn.ConvTranspose2d(channels[4], channels[3], 2, stride=2)
-        self.decoder4 = MKIR(channels[3] * 2, channels[3])  # Skip concat doubles channels
+        # Decoder (2 stages)
+        self.dec2 = MKIR(channels[2] * 2, channels[1])  # (128+128)→64
+        self.dec1 = MKIR(channels[1] * 2, channels[0])  # (64+64)→32
         
-        self.upconv3 = nn.ConvTranspose2d(channels[3], channels[2], 2, stride=2)
-        self.decoder3 = MKIR(channels[2] * 2, channels[2])
+        # Upsampling
+        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         
-        self.upconv2 = nn.ConvTranspose2d(channels[2], channels[1], 2, stride=2)
-        self.decoder2 = MKIR(channels[1] * 2, channels[1])
-        
-        self.upconv1 = nn.ConvTranspose2d(channels[1], channels[0], 2, stride=2)
-        self.decoder1 = MKIR(channels[0] * 2, channels[0])
-        
-        # CBAM attention on skip connections
+        # CBAM for skip connections
         if use_cbam:
-            print("✅ Using CBAM attention on skip connections")
-            self.cbam1 = CBAM(channels[0])
-            self.cbam2 = CBAM(channels[1])
-            self.cbam3 = CBAM(channels[2])
-            self.cbam4 = CBAM(channels[3])
+            self.cbam_enc1 = CBAM(channels[1])  # For enc1 (64 channels)
+            self.cbam_enc2 = CBAM(channels[2])  # For enc2 (128 channels)
         
-        # Output
+        # Output head
         self.output = nn.Conv2d(channels[0], num_classes, 1)
     
     def forward(self, x):
@@ -193,48 +193,46 @@ class MKSpatialMambaUNet(nn.Module):
         Returns:
             out: [B, 1, H, W] segmentation mask
         """
-        # Add spatial coordinates only if input is RGB (3 channels)
-        # If input already has 6 channels, dataloader added spatial coords
+        # Add spatial coordinates if input is RGB only
         if self.use_spatial and x.shape[1] == 3:
             spatial_coords = self.spatial_gen(x)  # [B, 3, H, W]
             x = torch.cat([x, spatial_coords], dim=1)  # [B, 6, H, W]
         
-        # Encoder
-        e1 = self.encoder1(x)              # [B, 16, H, W]
-        e2 = self.encoder2(self.pool(e1))  # [B, 32, H/2, W/2]
-        e3 = self.encoder3(self.pool(e2))  # [B, 64, H/4, W/4]
-        e4 = self.encoder4(self.pool(e3))  # [B, 96, H/8, W/8]
+        # Stem
+        x = self.stem(x)  # [B, 32, H, W]
         
-        # Bottleneck (with or without Mamba)
-        b = self.bottleneck(self.pool(e4))  # [B, 160, H/16, W/16]
+        # Encoder
+        e1 = self.enc1(self.pool(x))   # [B, 64, H/2, W/2]
+        e2 = self.enc2(self.pool(e1))  # [B, 128, H/4, W/4]
+        
+        # Bottleneck
+        if self.use_mamba:
+            b = self.pool(e2)              # [B, 128, H/8, W/8]
+            b = self.bottleneck_pre(b)     # [B, 128, H/8, W/8]
+            b = self.mamba_block(b)        # [B, 128, H/8, W/8]
+            b = self.bottleneck_post(b)    # [B, 128, H/8, W/8]
+        else:
+            b = self.bottleneck(self.pool(e2))  # [B, 128, H/8, W/8]
         
         # Decoder with skip connections
-        d4 = self.upconv4(b)  # [B, 96, H/8, W/8]
+        # Stage 2: 128 → 64
+        d2 = self.up2(b)  # [B, 128, H/4, W/4]
         if self.use_cbam:
-            e4 = self.cbam4(e4)
-        d4 = torch.cat([d4, e4], dim=1)  # [B, 192, H/8, W/8]
-        d4 = self.decoder4(d4)  # [B, 96, H/8, W/8]
+            e2 = self.cbam_enc2(e2)
+        d2 = torch.cat([d2, e2], dim=1)  # [B, 256, H/4, W/4]
+        d2 = self.dec2(d2)  # [B, 64, H/4, W/4]
         
-        d3 = self.upconv3(d4)
+        # Stage 1: 64 → 32
+        d1 = self.up1(d2)  # [B, 64, H/2, W/2]
         if self.use_cbam:
-            e3 = self.cbam3(e3)
-        d3 = torch.cat([d3, e3], dim=1)
-        d3 = self.decoder3(d3)
+            e1 = self.cbam_enc1(e1)
+        d1 = torch.cat([d1, e1], dim=1)  # [B, 128, H/2, W/2]
+        d1 = self.dec1(d1)  # [B, 32, H/2, W/2]
         
-        d2 = self.upconv2(d3)
-        if self.use_cbam:
-            e2 = self.cbam2(e2)
-        d2 = torch.cat([d2, e2], dim=1)
-        d2 = self.decoder2(d2)
-        
-        d1 = self.upconv1(d2)
-        if self.use_cbam:
-            e1 = self.cbam1(e1)
-        d1 = torch.cat([d1, e1], dim=1)
-        d1 = self.decoder1(d1)
+        # Final upsample to original size
+        d1 = F.interpolate(d1, scale_factor=2, mode='bilinear', align_corners=True)  # [B, 32, H, W]
         
         # Output
-        out = self.output(d1)
-        # out = torch.sigmoid(out) # Commented out for Mixed precision error
+        out = self.output(d1)  # [B, 1, H, W]
         
         return out

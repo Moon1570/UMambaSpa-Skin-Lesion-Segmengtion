@@ -19,15 +19,38 @@ data:
   in_channels: 6
   batch_size: 12
   
+  # Add to your config:
   augmentation:
     train:
+      # Geometric
       horizontal_flip_prob: 0.5
       vertical_flip_prob: 0.5
-      rotate_limit: 30
-      brightness_limit: 0.2
-      contrast_limit: 0.2
-      scale_limit: 0.2
-      enabled: true
+      rotate_limit: 45  # ← Increased from 30
+      shift_scale_rotate:
+        shift_limit: 0.1
+        scale_limit: 0.3  # ← Increased from 0.2
+        rotate_limit: 45
+      elastic_transform:
+        alpha: 120
+        sigma: 6
+        alpha_affine: 3.6
+      
+      # Color
+      brightness_limit: 0.3  # ← Increased
+      contrast_limit: 0.3    # ← Increased
+      hue_saturation_value:
+        hue_shift_limit: 20
+        sat_shift_limit: 30
+        val_shift_limit: 20
+      
+      # Quality
+      gaussian_blur: 0.2
+      motion_blur: 0.2
+      
+      # Medical-specific
+      clahe:
+        clip_limit: 4.0
+        tile_grid_size: [8, 8]
 
 # Model config - NO MAMBA!
 model:
@@ -41,7 +64,7 @@ model:
     use_cbam: true
   
   optimizer:
-    lr: 0.001
+    lr: 0.0003
     weight_decay: 0.0001
   
   criterion:
@@ -49,7 +72,7 @@ model:
     bce_weight: 0.4
 
 trainer:
-  max_epochs: 100
+  max_epochs: 150
   gradient_clip_val: 1.0
 
 callbacks:

@@ -1,0 +1,47 @@
+# @package _global_
+
+# configs/experiment/exp16_uniseg_inspired.yaml
+# Optimized for 8GB GPU
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: spatial_mamba_unet.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+name: "exp16_uniseg_inspired"
+
+tags: ["uniseg", "spatial", "cbam", "8gb-optimized"]
+
+data:
+  spatial_mode: "rgb_xyz_radial"
+  in_channels: 6
+  batch_size: 16  # Optimal for 8GB GPU without Mamba
+
+model:
+  net:
+    in_channels: 6
+    base_channels: 24  # Further reduced for 8GB GPU
+    use_mamba: false   # Disabled - GRU/Mamba too memory intensive for 8GB
+    mamba_config: null  # Disable mamba config
+  
+  optimizer:
+    lr: 0.001
+    weight_decay: 0.0001
+  
+  criterion:
+    bce_weight: 0.6
+    dice_weight: 0.4
+
+trainer:
+  max_epochs: 200
+  precision: 16  # Switch to mixed precision to save memory
+  accumulate_grad_batches: 3  # Effective batch size = 9
+  gradient_clip_val: 1.0
+
+logger:
+  wandb:
+    name: "exp16_uniseg_inspired"
+    tags: ${tags}
+    group: "8gb-optimized"

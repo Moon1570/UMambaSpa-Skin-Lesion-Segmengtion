@@ -1,0 +1,22 @@
+_target_: src.models.mk_enhanced_module.MKEnhancedLitModule
+
+# Network architecture
+net:
+  _target_: src.models.components.mk_enhanced_unet.MKEnhancedUNet
+  in_channels: 6  # Will be overridden by experiment config
+  num_classes: 1
+  channels: [16, 32, 64, 96]  # Reduced for fast training
+  use_spatial: true
+  use_se: false  # Will be overridden by experiment
+  deep_supervision: false  # Will be overridden by experiment
+
+# Optimizer parameters
+optimizer:
+  lr: 0.001
+  weight_decay: 0.0001
+
+# Loss criterion parameters
+criterion:
+  dice_weight: 0.6
+  bce_weight: 0.4
+  aux_weight: 0.4  # Weight for auxiliary losses (deep supervision)
