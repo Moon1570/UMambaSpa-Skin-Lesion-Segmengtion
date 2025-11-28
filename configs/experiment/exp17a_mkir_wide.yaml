@@ -1,0 +1,30 @@
+# configs/experiment/exp17a_mkir_wide.yaml
+
+model:
+  net:
+    _target_: src.models.components.mk_spatial_mamba_unet.MKSpatialMambaUNet
+    in_channels: 6
+    num_classes: 1
+    channels: [32, 64, 128]  # ← WIDER but fewer stages
+    use_spatial: true
+    use_mamba: true
+    use_cbam: true
+    
+    # MK-IR configuration (YOUR INNOVATION!)
+    mkir_config:
+      kernels: [3, 5, 7]  # Keep multi-kernel
+      expansion: 4        # Keep expansion ratio
+      use_se: true        # Keep SE attention
+  
+  optimizer:
+    lr: 0.001  # ← CRITICAL FIX!
+    weight_decay: 0.0001
+  
+  criterion:
+    dice_weight: 0.6
+    bce_weight: 0.4
+
+trainer:
+  max_epochs: 200  # ← MATCH SOTA
+  batch_size: 8
+  precision: 32

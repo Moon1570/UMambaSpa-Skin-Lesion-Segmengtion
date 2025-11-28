@@ -1,0 +1,93 @@
+# @package _global_
+
+defaults:
+  - override /data: isic2017.yaml
+  - override /model: mk_spatial_mamba.yaml
+  - override /callbacks: default.yaml
+  - override /logger: wandb.yaml
+  - override /trainer: default.yaml
+
+name: "exp5_pure_cnn"
+
+tags: ["pure-cnn", "spatial", "cbam", "mk-unet", "no-mamba"]
+
+seed: 12345
+
+# Same data config
+data:
+  spatial_mode: "rgb_xyz_radial"
+  in_channels: 6
+  batch_size: 12
+  
+  # Add to your config:
+  augmentation:
+    train:
+      # Geometric
+      horizontal_flip_prob: 0.5
+      vertical_flip_prob: 0.5
+      rotate_limit: 45  # ← Increased from 30
+      shift_scale_rotate:
+        shift_limit: 0.1
+        scale_limit: 0.3  # ← Increased from 0.2
+        rotate_limit: 45
+      elastic_transform:
+        alpha: 120
+        sigma: 6
+        alpha_affine: 3.6
+      
+      # Color
+      brightness_limit: 0.3  # ← Increased
+      contrast_limit: 0.3    # ← Increased
+      hue_saturation_value:
+        hue_shift_limit: 20
+        sat_shift_limit: 30
+        val_shift_limit: 20
+      
+      # Quality
+      gaussian_blur: 0.2
+      motion_blur: 0.2
+      
+      # Medical-specific
+      clahe:
+        clip_limit: 4.0
+        tile_grid_size: [8, 8]
+
+# Model config - NO MAMBA!
+model:
+  net:
+    _target_: src.models.components.mk_spatial_mamba_unet.MKSpatialMambaUNet
+    in_channels: 6
+    num_classes: 1
+    channels: [16, 32, 64, 96, 160]
+    use_spatial: true
+    use_mamba: false  # ← Mamba DISABLED (pure CNN)
+    use_cbam: true
+  
+  optimizer:
+    lr: 0.0003
+    weight_decay: 0.0001
+  
+  criterion:
+    dice_weight: 0.6
+    bce_weight: 0.4
+
+trainer:
+  max_epochs: 150
+  gradient_clip_val: 1.0
+
+callbacks:
+  early_stopping:
+    patience: 15
+    monitor: "val/dice"
+    mode: "max"
+  
+  model_checkpoint:
+    monitor: "val/dice"
+    mode: "max"
+    save_top_k: 3
+
+logger:
+  wandb:
+    name: "exp5_pure_cnn_no_mamba"
+    tags: ${tags}
+    group: "hybrid-experiments"

@@ -1,0 +1,28 @@
+2025-11-13 11:11:20
+Epoch 76/99 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 167/167 0:04:03 • 0:00:00 0.69it/s v_num: hper val/loss: 0.194 val/dice: 0.801 val/dice_best: 0.824  
+2025-11-13 11:11:20
+Epoch 76/99 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 167/167 0:04:03 • 0:00:00 0.69it/s v_num: hper val/loss: 0.199 val/dice: 0.801 val/dice_best: 0.824  
+2025-11-13 11:11:24
+                                                                                        train/loss: 0.127 train/dice: 0.894                               
+2025-11-13 11:11:24
+[2025-11-13 11:11:32,616][__main__][INFO] - [rank: 0] Starting testing!
+2025-11-13 11:11:33
+Restoring states from the checkpoint path at /teamspace/studios/this_studio/UMambaSpa-Skin-Lesion-Segmengtion/logs/train/runs/2025-11-13_06-34-55/checkpoints/epoch_061.ckpt
+2025-11-13 11:11:33
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+2025-11-13 11:11:33
+Loaded model weights from the checkpoint at /teamspace/studios/this_studio/UMambaSpa-Skin-Lesion-Segmengtion/logs/train/runs/2025-11-13_06-34-55/checkpoints/epoch_061.ckpt
+2025-11-13 11:11:33
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓━━━━━━━ 50/50 0:00:51 • 0:00:00 0.91it/s  m0.89it/s  m0.87it/s  [0m  
+2025-11-13 11:12:27
+┃        Test metric        ┃       DataLoader 0        ┃
+2025-11-13 11:12:27
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+2025-11-13 11:12:27
+│         test/dice         │     0.786724865436554     │
+2025-11-13 11:12:27
+│         test/loss         │    0.23543614149093628    │
+2025-11-13 11:12:27
+└───────────────────────────┴───────────────────────────┘
+2025-11-13 11:12:27
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50/50 0:00:51 • 0:00:00 0.91it/s

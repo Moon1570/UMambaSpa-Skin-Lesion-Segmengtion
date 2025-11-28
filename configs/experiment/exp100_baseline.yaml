@@ -1,0 +1,66 @@
+# @package _global_
+
+# Experiment 100: Baseline - No Enhancements
+# Pure MK U-Net without any enhancements for comparison
+
+defaults:
+  - override /data: isic2017
+  - override /model: mk_enhanced
+  - override /callbacks: default
+  - override /trainer: default
+  - override /logger: wandb
+
+# Experiment name
+experiment_name: "exp100_baseline"
+
+# Seed
+seed: 12345
+
+# Tags for logging
+tags: ["exp100", "baseline", "no_enhancements", "mk_unet"]
+
+# Data configuration
+data:
+  spatial_mode: "rgb"  # RGB only
+  in_channels: 3
+  batch_size: 16
+  num_workers: 4
+
+# Model configuration - NO ENHANCEMENTS
+model:
+  net:
+    in_channels: 3
+    channels: [16, 32, 64, 96]
+    use_spatial: false  # ❌ No spatial
+    use_se: false  # ❌ No SE
+    deep_supervision: false  # ❌ No DS
+
+# Trainer configuration
+trainer:
+  max_epochs: 50
+  accelerator: gpu
+  devices: 1
+  precision: 16-mixed
+  log_every_n_steps: 10
+  check_val_every_n_epoch: 1
+
+# Callbacks
+callbacks:
+  model_checkpoint:
+    monitor: "val/dice"
+    mode: "max"
+    save_top_k: 1
+    filename: "epoch_{epoch:03d}_dice_{val/dice:.4f}"
+  
+  early_stopping:
+    monitor: "val/dice"
+    patience: 15
+    mode: "max"
+
+# Logger
+logger:
+  wandb:
+    project: "umambaspa-lesion"
+    name: "exp100_baseline"
+    tags: ${tags}
+    notes: "Baseline MK U-Net - No enhancements for comparison"

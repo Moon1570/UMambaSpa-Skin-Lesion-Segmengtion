@@ -50,6 +50,25 @@ def train(cfg: DictConfig) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     :param cfg: A DictConfig configuration composed by Hydra.
     :return: A tuple with metrics and dict with all instantiated objects.
     """
+    # Add file logging for local train.log
+    import logging
+    from pathlib import Path
+    
+    log_dir = Path(cfg.paths.output_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "train.log"
+    
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    ))
+    
+    # Add file handler to root logger
+    logging.getLogger().addHandler(file_handler)
+    log.info(f"Logging to: {log_file}")
+    
     # set seed for random number generators in pytorch, numpy and python.random
     if cfg.get("seed"):
         L.seed_everything(cfg.seed, workers=True)

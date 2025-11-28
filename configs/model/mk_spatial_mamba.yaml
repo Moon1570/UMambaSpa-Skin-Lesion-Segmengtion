@@ -1,0 +1,21 @@
+_target_: src.models.mk_spatial_mamba_module.MKSpatialMambaLitModule
+
+# Network architecture
+net:
+  _target_: src.models.components.mk_spatial_mamba_unet.MKSpatialMambaUNet
+  in_channels: 6  # Will be overridden by experiment config
+  num_classes: 1
+  channels: [16, 32, 64, 96, 160]
+  use_spatial: true
+  use_mamba: true
+  use_cbam: true
+
+# Optimizer parameters
+optimizer:
+  lr: 0.001
+  weight_decay: 0.0001
+
+# Loss criterion parameters
+criterion:
+  dice_weight: 0.6
+  bce_weight: 0.4

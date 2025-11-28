@@ -108,7 +108,8 @@ class ISICDataModule(LightningDataModule):
     
     def _get_train_transform(self):
         """Training augmentations."""
-        aug_config = self.hparams.augmentation.get('train', {})
+        augmentation = self.hparams.augmentation or {}
+        aug_config = augmentation.get('train', {})
         
         return A.Compose([
             A.Resize(*self.hparams.image_size),
